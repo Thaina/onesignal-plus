@@ -1,4 +1,4 @@
-# onesignal-plus
+# Fork onesignal-plus as Promise
 one signal client library for node.js
 
 **onesignal-plus** is an extensible node.js client library for one signal service.
@@ -28,10 +28,10 @@ Once your client instance is ready, there are 4 methods you can call:
 - DELETE
 
 *GET* and *DELETE* methods takes 2 parameters such as **path** and **callback**.
-Path is for defining API method such as *players*, *players/1234567890*, *apps*, *apps/1234567890*, *notifications* and callback is for handling results.
+Path is for defining API method such as *players*, *players/1234567890*, *apps*, *apps/1234567890*, *notifications*
 
 *POST* and *PUT* methods takes 3 parameters such as **path**, **data** and **callback**.
-Path is for defining API method such as players/1234567890, apps/1234567890, notifications/1234567890 and callback is for handling results.
+Path is for defining API method such as players/1234567890, apps/1234567890, notifications/1234567890
 Data parameter is for sending data to the server.
 
     var $onesignal = require('onesignal-plus').$instance;
@@ -42,7 +42,7 @@ Data parameter is for sending data to the server.
         app_id: 'APP_ID',
         contents: {en: 'Hi!'},
         include_player_ids: ['PLAYER_ID']
-    }, function (errors, data) {
+    }).then((errors, data) => {
         console.log(errors, data);
     });
 
