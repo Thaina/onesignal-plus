@@ -1,12 +1,13 @@
-var extend = require('util')._extend;
+if(!Object.assign)
+    Object.assign = require('util')._extend;
+
 var format = require('util').format;
 var https = require('https');
 
-/**
- * @module OneSignal
- * @class OneSignal
- */
-function OneSignal() {
+/** @module OneSignal
+ * @class OneSignal */
+function OneSignal(appID) {
+    this.appID = appID;
     this.options = {
         host: 'onesignal.com',
         port: 443,
@@ -15,124 +16,56 @@ function OneSignal() {
     };
 }
 
-/**
- * This method updates settings
+/** This method updates settings
  * @param {Object} options settings
  * @memberof OneSignal
- * @method setup
- */
+ * @method setup */
 OneSignal.prototype.setup = function (options) {
-    if (options instanceof Object) {
-        this.options = extend(this.options, options);
-    }
+    if(options instanceof Object)
+        this.options = Object.assign(this.options,options);
 };
 
-/**
- * This method makes request
+/** This method makes request
  * @memberof OneSignal
  * @method request
- * @private
- */
-OneSignal.prototype.__request = function (options, data, callback) {
-    var req = https.request(options, function (res) {
-        res.on('data', function (data) {
-            try {
-                var response = JSON.parse(data);
-                if (response.hasOwnProperty('errors') && response.errors instanceof Array && response.errors.length) {
-                    callback(response.errors);
-                } else {
-                    callback(null, response);
-                }
-            } catch (e) {
-                callback([e]);
-            }
-        });
-    });
+ * @private */
+OneSignal.prototype.__request = function(method,path,data) {
+    var options = {
+        method: method,
+        path: format('/api/%s/%s',this.options.version,path)
+    };
+    options.host = this.options.host;
+    options.port = this.options.port;
+    options.headers = {
+        'Content-Type': 'application/json',
+        'Authorization': format('Basic %s',this.options.api_key)
+    };
 
-    try {
-        req.on('error', function (e) {
-            callback([e]);
-        });
-        if (data) {
+    return new Promise((resolve,reject) => {
+        var req = https.request(options,(res) => {
+            res.on('data',resolve);
+        }).on('error',(e) => reject([e]));
+
+        if(data)
             req.write(JSON.stringify(data));
-        }
         req.end();
-    } catch (e) {
-        callback([e]);
-    }
+    }).then((data) => {
+         var response = JSON.parse(data);
+         if(response.errors instanceof Array && response.errors.length)
+             throw response.errors;
+
+         return response;
+    });
 };
 
-/**
- * This method makes a get request
- * @memberof OneSignal
- * @method get
- */
-OneSignal.prototype.get = function (path, callback) {
-    this.__request({
-        host: this.options.host,
-        port: this.options.port,
-        path: format('/api/%s/%s', this.options.version, path),
-        method: 'get',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': format('Basic %s', this.options.api_key)
-        }
-    }, null, callback);
-};
-
-/**
- * This method makes a post request
- * @memberof OneSignal
- * @method post
- */
-OneSignal.prototype.post = function (path, data, callback) {
-    this.__request({
-        host: this.options.host,
-        port: this.options.port,
-        path: format('/api/%s/%s', this.options.version, path),
-        method: 'post',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': format('Basic %s', this.options.api_key)
-        }
-    }, data, callback);
-};
-
-/**
- * This method makes a put request
- * @memberof OneSignal
- * @method put
- */
-OneSignal.prototype.put = function (path, data, callback) {
-    this.__request({
-        host: this.options.host,
-        port: this.options.port,
-        path: format('/api/%s/%s', this.options.version, path),
-        method: 'put',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': format('Basic %s', this.options.api_key)
-        }
-    }, data, callback);
-};
-
-/**
- * This method makes a get request
- * @memberof OneSignal
- * @method delete
- */
-OneSignal.prototype.delete = function (path, callback) {
-    this.__request({
-        host: this.options.host,
-        port: this.options.port,
-        path: format('/api/%s/%s', this.options.version, path),
-        method: 'delete',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': format('Basic %s', this.options.api_key)
-        }
-    }, null, callback);
-};
+/** @param {string} path */
+OneSignal.prototype.get = (path) => this.__request('get',path);
+/** @param {string} path */
+OneSignal.prototype.post = (path, data) => this.__request('post',path,data);
+/** @param {string} path */
+OneSignal.prototype.put = (path, data) => this.__request('put',path,data);
+/** @param {string} path */
+OneSignal.prototype.delete = (path) => this.__request('delete',path);
 
 exports.OneSignal = OneSignal;
 exports.$instance = new OneSignal();
